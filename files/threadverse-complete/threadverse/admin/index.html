@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THREADVERSE — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07070f;
+    --bg2: #0d0d1a;
+    --bg3: #111120;
+    --sidebar: #090913;
+    --accent: #00e5ff;
+    --accent2: #ff2d6f;
+    --accent3: #7c3aed;
+    --gold: #ffd700;
+    --text: #e8e8ff;
+    --text-muted: #6666aa;
+    --border: rgba(255,255,255,0.07);
+    --input-bg: rgba(255,255,255,0.04);
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Rajdhani',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width:260px; flex-shrink:0;
+    background:var(--sidebar);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    position:fixed; top:0; left:0; bottom:0;
+    z-index:100; overflow-y:auto;
+  }
+  .sidebar-logo {
+    padding:1.8rem 1.5rem;
+    border-bottom:1px solid var(--border);
+  }
+  .sidebar-logo .logo-text {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:1.6rem; letter-spacing:4px;
+    background:linear-gradient(90deg,var(--accent2),var(--accent),var(--accent3));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    background-clip:text;
+    display:block;
+  }
+  .sidebar-logo .logo-sub {
+    font-family:'Space Mono',monospace;
+    font-size:0.6rem; color:var(--text-muted);
+    letter-spacing:3px; text-transform:uppercase;
+    margin-top:0.2rem;
+  }
+  .sidebar-nav { padding:1rem 0; flex:1; }
+  .nav-section-label {
+    font-family:'Space Mono',monospace;
+    font-size:0.55rem; letter-spacing:3px;
+    text-transform:uppercase; color:var(--text-muted);
+    padding:0.8rem 1.5rem 0.4rem;
+  }
+  .nav-item {
+    display:flex; align-items:center; gap:0.8rem;
+    padding:0.75rem 1.5rem;
+    cursor:pointer; transition:all 0.2s;
+    font-size:0.95rem; font-weight:600;
+    letter-spacing:1px; color:var(--text-muted);
+    border-left:2px solid transparent;
+    user-select:none;
+  }
+  .nav-item:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+  .nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(0,229,255,0.05); }
+  .nav-item .nav-icon { font-size:1rem; width:20px; text-align:center; }
+  .nav-badge {
+    margin-left:auto; font-family:'Space Mono',monospace;
+    font-size:0.6rem; background:var(--accent2);
+    color:white; padding:0.2rem 0.5rem; border-radius:2px;
+  }
+  .sidebar-footer {
+    padding:1.5rem;
+    border-top:1px solid var(--border);
+  }
+  .preview-btn {
+    display:flex; align-items:center; gap:0.7rem;
+    padding:0.8rem 1.2rem;
+    background:rgba(0,229,255,0.08);
+    border:1px solid rgba(0,229,255,0.2);
+    color:var(--accent); border-radius:4px;
+    cursor:pointer; font-family:'Bebas Neue',sans-serif;
+    font-size:0.95rem; letter-spacing:2px;
+    transition:all 0.3s; width:100%; justify-content:center;
+  }
+  .preview-btn:hover { background:rgba(0,229,255,0.15); border-color:var(--accent); }
+
+  /* MAIN */
+  .main {
+    margin-left:260px;
+    flex:1; display:flex; flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    position:sticky; top:0; z-index:50;
+    background:rgba(7,7,15,0.9);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:1rem 2rem;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .topbar-title {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:1.4rem; letter-spacing:3px; color:var(--text);
+  }
+  .topbar-title span { color:var(--accent); }
+  .topbar-actions { display:flex; gap:0.8rem; align-items:center; }
+  .save-btn {
+    padding:0.6rem 1.8rem;
+    background:linear-gradient(135deg,var(--accent2),#ff6b9d);
+    border:none; color:white;
+    font-family:'Bebas Neue',sans-serif;
+    font-size:1rem; letter-spacing:2px;
+    cursor:pointer; border-radius:3px;
+    transition:all 0.3s;
+  }
+  .save-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(255,45,111,0.4); }
+  .save-btn.saving { opacity:0.7; cursor:not-allowed; }
+  .unsaved-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:var(--warning); display:none;
+  }
+  .unsaved-dot.visible { display:block; }
+
+  /* CONTENT */
+  .content { padding:2rem; flex:1; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  /* CARDS */
+  .panel-card {
+    background:var(--bg2);
+    border:1px solid var(--border);
+    border-radius:6px;
+    margin-bottom:1.5rem;
+    overflow:hidden;
+  }
+  .panel-card-header {
+    padding:1.2rem 1.5rem;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-card-title {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:1.1rem; letter-spacing:2px;
+    display:flex; align-items:center; gap:0.7rem;
+  }
+  .panel-card-title .icon { font-size:1rem; }
+  .panel-card-body { padding:1.5rem; }
+
+  /* FORM ELEMENTS */
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+  .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem; }
+  .form-group { display:flex; flex-direction:column; gap:0.4rem; }
+  .form-group.full { grid-column:1/-1; }
+  label {
+    font-family:'Space Mono',monospace;
+    font-size:0.65rem; letter-spacing:2px;
+    text-transform:uppercase; color:var(--text-muted);
+  }
+  input[type=text], input[type=email], input[type=number], input[type=url], textarea, select {
+    background:var(--input-bg);
+    border:1px solid var(--border);
+    color:var(--text); padding:0.7rem 1rem;
+    border-radius:3px; font-family:'Rajdhani',sans-serif;
+    font-size:1rem; outline:none;
+    transition:border-color 0.2s;
+    width:100%;
+  }
+  input:focus, textarea:focus, select:focus { border-color:var(--accent); }
+  textarea { resize:vertical; min-height:80px; }
+  select option { background:#1a1a2e; }
+
+  /* COLOR PICKERS */
+  .color-group { display:flex; align-items:center; gap:0.8rem; }
+  .color-swatch {
+    width:36px; height:36px; border-radius:4px;
+    border:1px solid var(--border); cursor:pointer;
+    position:relative; overflow:hidden; flex-shrink:0;
+  }
+  .color-swatch input[type=color] {
+    position:absolute; inset:-4px;
+    width:calc(100%+8px); height:calc(100%+8px);
+    border:none; cursor:pointer; padding:0;
+    opacity:0;
+  }
+  .color-preview { position:absolute; inset:0; border-radius:3px; pointer-events:none; }
+  .color-hex { font-family:'Space Mono',monospace; font-size:0.8rem; color:var(--text); background:var(--input-bg); border:1px solid var(--border); padding:0.4rem 0.8rem; border-radius:3px; width:100px; }
+
+  /* PRODUCT TABLE */
+  .product-table { width:100%; border-collapse:collapse; }
+  .product-table th {
+    font-family:'Space Mono',monospace;
+    font-size:0.6rem; letter-spacing:2px;
+    text-transform:uppercase; color:var(--text-muted);
+    padding:0.8rem 1rem; text-align:left;
+    border-bottom:1px solid var(--border);
+  }
+  .product-table td { padding:0.9rem 1rem; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; }
+  .product-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .product-table tr:last-child td { border-bottom:none; }
+  .product-emoji { font-size:1.8rem; }
+  .product-name-cell { font-weight:600; font-size:1rem; }
+  .product-series-cell { font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--text-muted); }
+  .cat-pill {
+    font-family:'Space Mono',monospace; font-size:0.6rem;
+    letter-spacing:1px; padding:0.25rem 0.6rem;
+    border-radius:2px; text-transform:uppercase; font-weight:700;
+  }
+  .cat-pill.anime { background:rgba(255,45,111,0.15); color:var(--accent2); border:1px solid rgba(255,45,111,0.3); }
+  .cat-pill.bands { background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2); }
+  .cat-pill.games { background:rgba(124,58,237,0.15); color:#a78bfa; border:1px solid rgba(124,58,237,0.3); }
+  .badge-pill {
+    font-family:'Space Mono',monospace; font-size:0.55rem;
+    letter-spacing:1px; padding:0.2rem 0.5rem; border-radius:2px;
+    text-transform:uppercase;
+  }
+  .badge-new { background:var(--accent2); color:white; }
+  .badge-hot { background:var(--gold); color:#000; }
+  .badge-limited { background:var(--accent3); color:white; }
+  .badge-none { background:rgba(255,255,255,0.06); color:var(--text-muted); }
+  .action-btns { display:flex; gap:0.4rem; }
+  .action-btn {
+    padding:0.35rem 0.8rem; border-radius:3px;
+    font-family:'Space Mono',monospace; font-size:0.65rem;
+    cursor:pointer; border:none; transition:all 0.2s;
+    letter-spacing:1px;
+  }
+  .btn-edit { background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2); }
+  .btn-edit:hover { background:rgba(0,229,255,0.2); }
+  .btn-delete { background:rgba(239,68,68,0.1); color:var(--danger); border:1px solid rgba(239,68,68,0.2); }
+  .btn-delete:hover { background:rgba(239,68,68,0.2); }
+  .btn-toggle { background:rgba(34,197,94,0.1); color:var(--success); border:1px solid rgba(34,197,94,0.2); }
+  .btn-toggle:hover { background:rgba(34,197,94,0.2); }
+  .btn-add-new {
+    display:flex; align-items:center; gap:0.6rem;
+    padding:0.6rem 1.4rem;
+    background:rgba(0,229,255,0.08);
+    border:1px solid rgba(0,229,255,0.2);
+    color:var(--accent); border-radius:3px;
+    cursor:pointer; font-family:'Bebas Neue',sans-serif;
+    font-size:0.9rem; letter-spacing:2px;
+    transition:all 0.3s;
+  }
+  .btn-add-new:hover { background:rgba(0,229,255,0.15); }
+
+  /* MODAL */
+  .modal-overlay {
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.7);
+    z-index:1000; display:none;
+    align-items:center; justify-content:center;
+    backdrop-filter:blur(4px);
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--bg2);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px;
+    width:600px; max-width:95vw;
+    max-height:90vh; overflow-y:auto;
+  }
+  .modal-header {
+    padding:1.5rem;
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .modal-title { font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:3px; }
+  .modal-close {
+    width:32px; height:32px; border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    border:none; color:var(--text-muted);
+    cursor:pointer; font-size:1rem;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 0.2s;
+  }
+  .modal-close:hover { background:rgba(255,255,255,0.12); color:white; }
+  .modal-body { padding:1.5rem; }
+  .modal-footer { padding:1.5rem; border-top:1px solid var(--border); display:flex; gap:0.8rem; justify-content:flex-end; }
+  .btn-cancel {
+    padding:0.6rem 1.5rem; background:transparent;
+    border:1px solid var(--border); color:var(--text-muted);
+    border-radius:3px; cursor:pointer; font-family:'Rajdhani',sans-serif;
+    font-size:1rem; transition:all 0.2s;
+  }
+  .btn-cancel:hover { border-color:rgba(255,255,255,0.2); color:white; }
+  .btn-save-modal {
+    padding:0.6rem 1.8rem;
+    background:linear-gradient(135deg,var(--accent2),#ff6b9d);
+    border:none; color:white; border-radius:3px;
+    font-family:'Bebas Neue',sans-serif; font-size:1rem;
+    letter-spacing:2px; cursor:pointer; transition:all 0.3s;
+  }
+  .btn-save-modal:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(255,45,111,0.3); }
+
+  /* STATS DASHBOARD */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:2rem; }
+  .stat-card {
+    background:var(--bg2); border:1px solid var(--border);
+    border-radius:6px; padding:1.5rem;
+    position:relative; overflow:hidden;
+  }
+  .stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  }
+  .stat-card:nth-child(1)::before { background:var(--accent2); }
+  .stat-card:nth-child(2)::before { background:var(--accent); }
+  .stat-card:nth-child(3)::before { background:var(--accent3); }
+  .stat-card:nth-child(4)::before { background:var(--gold); }
+  .stat-value { font-family:'Bebas Neue',sans-serif; font-size:2.5rem; line-height:1; display:block; margin-bottom:0.3rem; }
+  .stat-card:nth-child(1) .stat-value { color:var(--accent2); }
+  .stat-card:nth-child(2) .stat-value { color:var(--accent); }
+  .stat-card:nth-child(3) .stat-value { color:var(--accent3); }
+  .stat-card:nth-child(4) .stat-value { color:var(--gold); }
+  .stat-label { font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); }
+  .stat-delta { font-size:0.8rem; color:var(--success); margin-top:0.4rem; }
+
+  /* SECTION TOGGLES */
+  .section-toggle { display:flex; align-items:center; gap:0.8rem; }
+  .toggle-switch {
+    position:relative; width:44px; height:24px;
+    background:rgba(255,255,255,0.1); border-radius:12px;
+    cursor:pointer; transition:background 0.3s;
+    border:1px solid var(--border); flex-shrink:0;
+  }
+  .toggle-switch.on { background:var(--accent); border-color:var(--accent); }
+  .toggle-knob {
+    position:absolute; top:2px; left:2px;
+    width:18px; height:18px; border-radius:50%;
+    background:white; transition:transform 0.3s;
+  }
+  .toggle-switch.on .toggle-knob { transform:translateX(20px); }
+  .section-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:1rem 0; border-bottom:1px solid rgba(255,255,255,0.04);
+  }
+  .section-row:last-child { border-bottom:none; padding-bottom:0; }
+  .section-info .section-name { font-weight:600; font-size:1rem; }
+  .section-info .section-desc { font-family:'Space Mono',monospace; font-size:0.65rem; color:var(--text-muted); margin-top:0.2rem; }
+
+  /* COLOR THEME GRID */
+  .theme-colors { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+  .color-item { }
+  .color-item label { margin-bottom:0.5rem; display:block; }
+
+  /* NOTIFICATION */
+  .notif {
+    position:fixed; top:80px; right:2rem; z-index:2000;
+    background:var(--bg3); border:1px solid var(--success);
+    padding:1rem 1.5rem; border-radius:4px;
+    font-family:'Space Mono',monospace; font-size:0.8rem;
+    color:var(--success); display:flex; align-items:center; gap:0.8rem;
+    transform:translateX(300px); transition:transform 0.4s cubic-bezier(0.23,1,0.32,1);
+    max-width:300px;
+  }
+  .notif.show { transform:translateX(0); }
+  .notif.error { border-color:var(--danger); color:var(--danger); }
+  .notif.warning { border-color:var(--warning); color:var(--warning); }
+
+  /* PROMO EDITOR */
+  .promo-items { display:flex; flex-direction:column; gap:0.6rem; }
+  .promo-item { display:flex; align-items:center; gap:0.8rem; }
+  .promo-item input { flex:1; }
+  .btn-remove-promo { padding:0.4rem 0.8rem; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:var(--danger); border-radius:3px; cursor:pointer; font-size:0.75rem; transition:all 0.2s; }
+  .btn-remove-promo:hover { background:rgba(239,68,68,0.2); }
+  .btn-add-promo { margin-top:0.5rem; padding:0.5rem 1rem; background:transparent; border:1px dashed var(--border); color:var(--text-muted); border-radius:3px; cursor:pointer; font-family:'Space Mono',monospace; font-size:0.7rem; letter-spacing:1px; transition:all 0.2s; }
+  .btn-add-promo:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* HERO TEXT EDITOR */
+  .live-preview-label { font-family:'Space Mono',monospace; font-size:0.6rem; letter-spacing:3px; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.6rem; }
+  .mini-preview {
+    background:var(--bg); border:1px solid var(--border);
+    border-radius:4px; padding:2rem; text-align:center;
+    margin-top:1rem; position:relative; overflow:hidden;
+  }
+  .mini-preview::before {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse at center, rgba(0,229,255,0.05), transparent 70%);
+  }
+  .preview-h1 { font-family:'Bebas Neue',sans-serif; font-size:2.5rem; letter-spacing:3px; line-height:0.9; position:relative; }
+  .preview-sub { font-family:'Space Mono',monospace; font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem; letter-spacing:3px; position:relative; }
+
+  /* RESPONSIVE */
+  @media(max-width:768px){
+    .sidebar{width:100%;position:relative;height:auto;}
+    .main{margin-left:0;}
+    .stats-grid{grid-template-columns:repeat(2,1fr);}
+    .form-row,.form-row-3{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-text">THREADVERSE</span>
+    <div class="logo-sub">// Admin Panel</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="switchTab('dashboard',this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-section-label">Content</div>
+    <div class="nav-item" onclick="switchTab('hero',this)">
+      <span class="nav-icon">🎯</span> Hero Section
+    </div>
+    <div class="nav-item" onclick="switchTab('products',this)">
+      <span class="nav-icon">👕</span> Products
+      <span class="nav-badge" id="productCount">18</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('categories',this)">
+      <span class="nav-icon">📂</span> Categories
+    </div>
+    <div class="nav-item" onclick="switchTab('ticker',this)">
+      <span class="nav-icon">📢</span> Promo Ticker
+    </div>
+    <div class="nav-section-label">Appearance</div>
+    <div class="nav-item" onclick="switchTab('theme',this)">
+      <span class="nav-icon">🎨</span> Theme & Colors
+    </div>
+    <div class="nav-item" onclick="switchTab('sections',this)">
+      <span class="nav-icon">👁</span> Show/Hide Sections
+    </div>
+    <div class="nav-section-label">Site</div>
+    <div class="nav-item" onclick="switchTab('seo',this)">
+      <span class="nav-icon">🔍</span> SEO & Meta
+    </div>
+    <div class="nav-item" onclick="switchTab('contact',this)">
+      <span class="nav-icon">📬</span> Store Info
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="preview-btn" onclick="openPreview()">
+      ↗ Preview Website
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title">Admin <span id="currentTabLabel">/ Dashboard</span></div>
+    <div class="topbar-actions">
+      <div class="unsaved-dot" id="unsavedDot" title="Unsaved changes"></div>
+      <button class="save-btn" onclick="saveAll()" id="saveBtn">SAVE CHANGES</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-value">18</span>
+          <div class="stat-label">Total Products</div>
+          <div class="stat-delta">↑ 3 this week</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">3</span>
+          <div class="stat-label">Categories</div>
+          <div class="stat-delta">Anime · Bands · Games</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">6</span>
+          <div class="stat-label">Promo Items</div>
+          <div class="stat-delta">↑ Active ticker</div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">R449</span>
+          <div class="stat-label">Avg Price</div>
+          <div class="stat-delta">Across all shirts</div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">🚀</span> Quick Actions</div>
+        </div>
+        <div class="panel-card-body">
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+            <button class="btn-add-new" onclick="switchTab('products',document.querySelector('.nav-item:nth-child(5)'));openAddProduct()">
+              + Add Product
+            </button>
+            <button class="btn-add-new" onclick="switchTab('hero',document.querySelectorAll('.nav-item')[3])">
+              ✏️ Edit Hero Text
+            </button>
+            <button class="btn-add-new" onclick="switchTab('theme',document.querySelectorAll('.nav-item')[6])">
+              🎨 Change Colors
+            </button>
+            <button class="btn-add-new" onclick="openPreview()">
+              ↗ Preview Site
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">📋</span> Recent Products</div>
+        </div>
+        <div class="panel-card-body" style="padding:0">
+          <table class="product-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Badge</th>
+              </tr>
+            </thead>
+            <tbody id="dashRecentProducts"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <div class="tab-panel" id="tab-hero">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">🎯</span> Hero Content</div>
+        </div>
+        <div class="panel-card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Badge Text (above title)</label>
+              <input type="text" id="heroBadge" value="⚡ New Drop Available" oninput="markUnsaved();updateHeroPreview()">
+            </div>
+            <div class="form-group">
+              <label>Call-to-Action Button 1</label>
+              <input type="text" id="heroCta1" value="SHOP NOW" oninput="markUnsaved()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Hero Title — Line 1</label>
+              <input type="text" id="heroLine1" value="WEAR YOUR" oninput="markUnsaved();updateHeroPreview()">
+            </div>
+            <div class="form-group">
+              <label>Hero Title — Line 2 (gradient)</label>
+              <input type="text" id="heroLine2" value="UNIVERSE" oninput="markUnsaved();updateHeroPreview()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Subtitle / Tagline</label>
+              <input type="text" id="heroSub" value="Anime · Bands · Games · Limited Edition" oninput="markUnsaved();updateHeroPreview()">
+            </div>
+            <div class="form-group">
+              <label>Call-to-Action Button 2</label>
+              <input type="text" id="heroCta2" value="EXPLORE" oninput="markUnsaved()">
+            </div>
+          </div>
+          <div class="live-preview-label">Live Preview</div>
+          <div class="mini-preview" id="heroPreview">
+            <div style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:3px;color:#00e5ff;border:1px solid #00e5ff;display:inline-block;padding:0.3rem 1rem;margin-bottom:1rem;" id="prevBadge">⚡ New Drop Available</div>
+            <div class="preview-h1">
+              <span id="prevLine1" style="display:block;color:white;"></span>
+              <span id="prevLine2" style="background:linear-gradient(90deg,#ff2d6f,#00e5ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;"></span>
+            </div>
+            <div class="preview-sub" id="prevSub"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div class="tab-panel" id="tab-products">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">👕</span> All Products</div>
+          <button class="btn-add-new" onclick="openAddProduct()">+ Add New</button>
+        </div>
+        <div class="panel-card-body" style="padding:0">
+          <table class="product-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Badge</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="tab-panel" id="tab-categories">
+      <div id="catEditors"></div>
+    </div>
+
+    <!-- TICKER -->
+    <div class="tab-panel" id="tab-ticker">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">📢</span> Promo Ticker Items</div>
+        </div>
+        <div class="panel-card-body">
+          <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.2rem;">These scroll across the ticker bar between Hero and Categories.</p>
+          <div class="promo-items" id="promoItems"></div>
+          <button class="btn-add-promo" onclick="addPromoItem()">+ Add Ticker Item</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- THEME -->
+    <div class="tab-panel" id="tab-theme">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">🎨</span> Accent Colors</div>
+        </div>
+        <div class="panel-card-body">
+          <div class="theme-colors">
+            <div class="color-item">
+              <label>Anime Accent</label>
+              <div class="color-group">
+                <div class="color-swatch" id="swatch-anime">
+                  <div class="color-preview" id="preview-anime" style="background:#ff2d6f;"></div>
+                  <input type="color" value="#ff2d6f" id="color-anime" oninput="updateColor('anime',this.value)">
+                </div>
+                <input type="text" class="color-hex" id="hex-anime" value="#ff2d6f" oninput="updateColorFromHex('anime',this.value)">
+              </div>
+            </div>
+            <div class="color-item">
+              <label>Bands Accent</label>
+              <div class="color-group">
+                <div class="color-swatch" id="swatch-bands">
+                  <div class="color-preview" id="preview-bands" style="background:#00e5ff;"></div>
+                  <input type="color" value="#00e5ff" id="color-bands" oninput="updateColor('bands',this.value)">
+                </div>
+                <input type="text" class="color-hex" id="hex-bands" value="#00e5ff" oninput="updateColorFromHex('bands',this.value)">
+              </div>
+            </div>
+            <div class="color-item">
+              <label>Games Accent</label>
+              <div class="color-group">
+                <div class="color-swatch" id="swatch-games">
+                  <div class="color-preview" id="preview-games" style="background:#7c3aed;"></div>
+                  <input type="color" value="#7c3aed" id="color-games" oninput="updateColor('games',this.value)">
+                </div>
+                <input type="text" class="color-hex" id="hex-games" value="#7c3aed" oninput="updateColorFromHex('games',this.value)">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">🖥</span> Background Colors</div>
+        </div>
+        <div class="panel-card-body">
+          <div class="theme-colors">
+            <div class="color-item">
+              <label>Primary Background</label>
+              <div class="color-group">
+                <div class="color-swatch"><div class="color-preview" id="preview-bg" style="background:#080810;"></div><input type="color" value="#080810" id="color-bg" oninput="updateColor('bg',this.value)"></div>
+                <input type="text" class="color-hex" id="hex-bg" value="#080810" oninput="updateColorFromHex('bg',this.value)">
+              </div>
+            </div>
+            <div class="color-item">
+              <label>Card Background</label>
+              <div class="color-group">
+                <div class="color-swatch"><div class="color-preview" id="preview-card" style="background:#11111f;"></div><input type="color" value="#11111f" id="color-card" oninput="updateColor('card',this.value)"></div>
+                <input type="text" class="color-hex" id="hex-card" value="#11111f" oninput="updateColorFromHex('card',this.value)">
+              </div>
+            </div>
+            <div class="color-item">
+              <label>Gold / Sale Color</label>
+              <div class="color-group">
+                <div class="color-swatch"><div class="color-preview" id="preview-gold" style="background:#ffd700;"></div><input type="color" value="#ffd700" id="color-gold" oninput="updateColor('gold',this.value)"></div>
+                <input type="text" class="color-hex" id="hex-gold" value="#ffd700" oninput="updateColorFromHex('gold',this.value)">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">🔤</span> Site Name & Tagline</div>
+        </div>
+        <div class="panel-card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Store Name</label>
+              <input type="text" id="storeName" value="THREADVERSE" oninput="markUnsaved()">
+            </div>
+            <div class="form-group">
+              <label>Tagline</label>
+              <input type="text" id="storeTagline" value="WEAR YOUR UNIVERSE" oninput="markUnsaved()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTIONS VISIBILITY -->
+    <div class="tab-panel" id="tab-sections">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">👁</span> Show / Hide Sections</div>
+        </div>
+        <div class="panel-card-body">
+          <div id="sectionToggles"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEO -->
+    <div class="tab-panel" id="tab-seo">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">🔍</span> SEO & Meta Tags</div>
+        </div>
+        <div class="panel-card-body">
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Page Title (browser tab)</label>
+            <input type="text" id="metaTitle" value="THREADVERSE — Anime · Bands · Games" oninput="markUnsaved()">
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Meta Description</label>
+            <textarea id="metaDesc" oninput="markUnsaved()">Premium anime, band, and gaming T-shirts. Limited edition drops, heavyweight cotton, printed locally. SA-wide shipping.</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Keywords (comma separated)</label>
+            <input type="text" id="metaKeywords" value="anime shirts, band merch, gaming t-shirts, south africa, limited edition" oninput="markUnsaved()">
+          </div>
+          <div class="form-group">
+            <label>OG / Social Share Image URL</label>
+            <input type="url" id="ogImage" placeholder="https://your-site.com/og-image.jpg" oninput="markUnsaved()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STORE INFO -->
+    <div class="tab-panel" id="tab-contact">
+      <div class="panel-card">
+        <div class="panel-card-header">
+          <div class="panel-card-title"><span class="icon">📬</span> Store Information</div>
+        </div>
+        <div class="panel-card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Store Email</label>
+              <input type="email" id="storeEmail" value="hello@threadverse.co.za" oninput="markUnsaved()">
+            </div>
+            <div class="form-group">
+              <label>Store Phone</label>
+              <input type="text" id="storePhone" value="+27 (0)11 123 4567" oninput="markUnsaved()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Instagram URL</label>
+              <input type="url" id="socialIG" placeholder="https://instagram.com/yourstore" oninput="markUnsaved()">
+            </div>
+            <div class="form-group">
+              <label>TikTok URL</label>
+              <input type="url" id="socialTT" placeholder="https://tiktok.com/@yourstore" oninput="markUnsaved()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Discord URL</label>
+              <input type="url" id="socialDC" placeholder="https://discord.gg/yourserver" oninput="markUnsaved()">
+            </div>
+            <div class="form-group">
+              <label>Free Shipping Threshold (R)</label>
+              <input type="number" id="freeShipping" value="800" oninput="markUnsaved()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Footer Copyright Text</label>
+            <input type="text" id="footerCopy" value="© 2026 THREADVERSE — ALL RIGHTS RESERVED · MADE IN ZA 🇿🇦" oninput="markUnsaved()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ADD/EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">ADD PRODUCT</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editProductId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="pName" placeholder="e.g. Tanjiro Breath of Water">
+        </div>
+        <div class="form-group">
+          <label>Series / Brand</label>
+          <input type="text" id="pSeries" placeholder="e.g. Demon Slayer">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="pCat">
+            <option value="anime">🌸 Anime</option>
+            <option value="bands">🎸 Bands</option>
+            <option value="games">🎮 Games</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Price (e.g. R449)</label>
+          <input type="text" id="pPrice" placeholder="R449">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Emoji / Icon</label>
+          <input type="text" id="pEmoji" placeholder="🌊" maxlength="2">
+        </div>
+        <div class="form-group">
+          <label>Badge</label>
+          <select id="pBadge">
+            <option value="">None</option>
+            <option value="new">NEW</option>
+            <option value="hot">HOT</option>
+            <option value="limited">LIMITED</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save-modal" onclick="saveProduct()">SAVE PRODUCT</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <span id="notifIcon">✓</span>
+  <span id="notifMsg">Changes saved!</span>
+</div>
+
+<script>
+// ====================== DATA ======================
+let data = {
+  hero: {
+    badge: '⚡ New Drop Available',
+    line1: 'WEAR YOUR',
+    line2: 'UNIVERSE',
+    sub: 'Anime · Bands · Games · Limited Edition',
+    cta1: 'SHOP NOW',
+    cta2: 'EXPLORE'
+  },
+  colors: {
+    anime: '#ff2d6f', bands: '#00e5ff', games: '#7c3aed',
+    bg: '#080810', card: '#11111f', gold: '#ffd700'
+  },
+  storeName: 'THREADVERSE',
+  storeTagline: 'WEAR YOUR UNIVERSE',
+  ticker: [
+    {text:'🌸 ANIME DROPS', color:'pink'},
+    {text:'🎸 BAND MERCH', color:'cyan'},
+    {text:'🎮 GAME GEAR', color:'purple'},
+    {text:'⚡ FREE SHIPPING OVER R800', color:'pink'},
+    {text:'✦ LIMITED EDITIONS', color:'cyan'},
+    {text:'🔥 NEW SEASON DROP', color:'purple'},
+  ],
+  sections: [
+    {id:'hero', name:'Hero Banner', desc:'Full-screen hero with title and CTA buttons', visible:true},
+    {id:'ticker', name:'Promo Ticker', desc:'Scrolling text bar between hero and categories', visible:true},
+    {id:'categories', name:'Categories Grid', desc:'Anime / Bands / Games category cards', visible:true},
+    {id:'products', name:'Products Grid', desc:'Product listing with filter buttons', visible:true},
+    {id:'showcase', name:'3D Showcase', desc:'Rotating 3D shirt display with features', visible:true},
+    {id:'stats', name:'Stats Bar', desc:'Customer count, design count, satisfaction %', visible:true},
+    {id:'newsletter', name:'Newsletter', desc:'Email signup section', visible:true},
+  ],
+  categories: [
+    {id:'anime', name:'ANIME', icon:'🌸', bigIcon:'⛩', count:'48 designs · Dragon Ball · Naruto · AOT · Demon Slayer', btnText:'EXPLORE →'},
+    {id:'bands', name:'BANDS', icon:'🤘', bigIcon:'🎸', count:'35 designs · Metallica · Nirvana · AC/DC · Radiohead', btnText:'EXPLORE →'},
+    {id:'games', name:'GAMES', icon:'⚔️', bigIcon:'🎮', count:'52 designs · Zelda · Dark Souls · Final Fantasy · Elden Ring', btnText:'EXPLORE →'},
+  ],
+  products: [
+    {id:1, cat:'anime', name:'Tanjiro Breath of Water', series:'Demon Slayer', price:'R449', emoji:'🌊', badge:'new'},
+    {id:2, cat:'anime', name:'Survey Corps Wings', series:'Attack on Titan', price:'R399', emoji:'⚔️', badge:'hot'},
+    {id:3, cat:'anime', name:'Hidden Leaf Village', series:'Naruto', price:'R379', emoji:'🍃', badge:''},
+    {id:4, cat:'anime', name:'Dragon Spirit SSJ', series:'Dragon Ball Z', price:'R429', emoji:'⚡', badge:'limited'},
+    {id:5, cat:'anime', name:'Gojo Infinity Void', series:'Jujutsu Kaisen', price:'R469', emoji:'🔵', badge:'new'},
+    {id:6, cat:'anime', name:'Zoro Three Swords', series:'One Piece', price:'R389', emoji:'⚔️', badge:''},
+    {id:7, cat:'bands', name:'Master of Puppets', series:'Metallica', price:'R459', emoji:'🎸', badge:'hot'},
+    {id:8, cat:'bands', name:'Nevermind Wave', series:'Nirvana', price:'R419', emoji:'🌊', badge:''},
+    {id:9, cat:'bands', name:'Highway to Hell', series:'AC/DC', price:'R409', emoji:'⚡', badge:''},
+    {id:10, cat:'bands', name:'OK Computer Glitch', series:'Radiohead', price:'R449', emoji:'📡', badge:'limited'},
+    {id:11, cat:'bands', name:'Dark Side of the Moon', series:'Pink Floyd', price:'R479', emoji:'🌙', badge:'hot'},
+    {id:12, cat:'bands', name:'Iron Maiden Eddie', series:'Iron Maiden', price:'R469', emoji:'🤘', badge:'new'},
+    {id:13, cat:'games', name:'Triforce of Courage', series:'Legend of Zelda', price:'R449', emoji:'🔺', badge:'hot'},
+    {id:14, cat:'games', name:'Praise the Sun', series:'Dark Souls', price:'R429', emoji:'☀️', badge:''},
+    {id:15, cat:'games', name:'Tarnished Glory', series:'Elden Ring', price:'R499', emoji:'⚔️', badge:'new'},
+    {id:16, cat:'games', name:'Chocobo Rider', series:'Final Fantasy', price:'R409', emoji:'🐦', badge:''},
+    {id:17, cat:'games', name:'Joker Wild', series:'Persona 5', price:'R469', emoji:'🃏', badge:'limited'},
+    {id:18, cat:'games', name:'Last of Us Clicker', series:'The Last of Us', price:'R449', emoji:'🍄', badge:'new'},
+  ],
+  seo: { title:'THREADVERSE — Anime · Bands · Games', desc:'Premium anime, band, and gaming T-shirts.', keywords:'anime shirts, band merch, gaming t-shirts', ogImage:'' },
+  contact: { email:'hello@threadverse.co.za', phone:'+27 (0)11 123 4567', ig:'', tt:'', dc:'', freeShipping:800, footerCopy:'© 2026 THREADVERSE — ALL RIGHTS RESERVED · MADE IN ZA 🇿🇦' }
+};
+
+let hasUnsaved = false;
+function markUnsaved() { hasUnsaved = true; document.getElementById('unsavedDot').classList.add('visible'); }
+
+// ====================== TABS ======================
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  const labels = {dashboard:'/ Dashboard',hero:'/ Hero Section',products:'/ Products',categories:'/ Categories',ticker:'/ Promo Ticker',theme:'/ Theme & Colors',sections:'/ Show & Hide',seo:'/ SEO & Meta',contact:'/ Store Info'};
+  document.getElementById('currentTabLabel').textContent = labels[id] || '';
+  if (id==='products') renderProductsTable();
+  if (id==='categories') renderCategoryEditors();
+  if (id==='ticker') renderTicker();
+  if (id==='sections') renderSectionToggles();
+  if (id==='hero') updateHeroPreview();
+  if (id==='dashboard') renderDashRecent();
+}
+
+// ====================== HERO PREVIEW ======================
+function updateHeroPreview() {
+  document.getElementById('prevBadge').textContent = document.getElementById('heroBadge').value;
+  document.getElementById('prevLine1').textContent = document.getElementById('heroLine1').value;
+  document.getElementById('prevLine2').textContent = document.getElementById('heroLine2').value;
+  document.getElementById('prevSub').textContent = document.getElementById('heroSub').value;
+}
+updateHeroPreview();
+
+// ====================== PRODUCTS TABLE ======================
+function renderProductsTable() {
+  const tbody = document.getElementById('productsTableBody');
+  tbody.innerHTML = data.products.map(p => `
+    <tr>
+      <td class="product-emoji">${p.emoji}</td>
+      <td><div class="product-name-cell">${p.name}</div><div class="product-series-cell">${p.series}</div></td>
+      <td><span class="cat-pill ${p.cat}">${p.cat}</span></td>
+      <td style="font-family:'Space Mono',monospace;font-size:0.85rem;">${p.price}</td>
+      <td><span class="badge-pill ${p.badge?'badge-'+p.badge:'badge-none'}">${p.badge||'none'}</span></td>
+      <td><div class="action-btns">
+        <button class="action-btn btn-edit" onclick="editProduct(${p.id})">Edit</button>
+        <button class="action-btn btn-delete" onclick="deleteProduct(${p.id})">Delete</button>
+      </div></td>
+    </tr>
+  `).join('');
+  document.getElementById('productCount').textContent = data.products.length;
+}
+
+function renderDashRecent() {
+  const tbody = document.getElementById('dashRecentProducts');
+  tbody.innerHTML = data.products.slice(-6).reverse().map(p => `
+    <tr>
+      <td><div style="display:flex;align-items:center;gap:0.8rem;"><span style="font-size:1.5rem">${p.emoji}</span><div><div style="font-weight:600">${p.name}</div><div style="font-size:0.75rem;color:var(--text-muted);font-family:'Space Mono',monospace">${p.series}</div></div></div></td>
+      <td><span class="cat-pill ${p.cat}">${p.cat}</span></td>
+      <td style="font-family:'Space Mono',monospace;font-size:0.85rem;">${p.price}</td>
+      <td><span class="badge-pill ${p.badge?'badge-'+p.badge:'badge-none'}">${p.badge||'none'}</span></td>
+    </tr>
+  `).join('');
+}
+renderDashRecent();
+
+// ====================== PRODUCT MODAL ======================
+function openAddProduct() {
+  document.getElementById('modalTitle').textContent = 'ADD PRODUCT';
+  document.getElementById('editProductId').value = '';
+  document.getElementById('pName').value = '';
+  document.getElementById('pSeries').value = '';
+  document.getElementById('pCat').value = 'anime';
+  document.getElementById('pPrice').value = '';
+  document.getElementById('pEmoji').value = '';
+  document.getElementById('pBadge').value = '';
+  document.getElementById('productModal').classList.add('open');
+}
+function editProduct(id) {
+  const p = data.products.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('modalTitle').textContent = 'EDIT PRODUCT';
+  document.getElementById('editProductId').value = p.id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pSeries').value = p.series;
+  document.getElementById('pCat').value = p.cat;
+  document.getElementById('pPrice').value = p.price;
+  document.getElementById('pEmoji').value = p.emoji;
+  document.getElementById('pBadge').value = p.badge;
+  document.getElementById('productModal').classList.add('open');
+}
+function closeModal() { document.getElementById('productModal').classList.remove('open'); }
+function saveProduct() {
+  const name = document.getElementById('pName').value.trim();
+  const series = document.getElementById('pSeries').value.trim();
+  const price = document.getElementById('pPrice').value.trim();
+  const emoji = document.getElementById('pEmoji').value.trim();
+  if (!name || !series || !price || !emoji) { showNotif('Fill in all required fields','error'); return; }
+  const editId = document.getElementById('editProductId').value;
+  const prod = {
+    id: editId ? parseInt(editId) : Date.now(),
+    cat: document.getElementById('pCat').value,
+    name, series, price, emoji,
+    badge: document.getElementById('pBadge').value
+  };
+  if (editId) {
+    const idx = data.products.findIndex(x => x.id == editId);
+    if (idx !== -1) data.products[idx] = prod;
+    showNotif('Product updated!');
+  } else {
+    data.products.push(prod);
+    showNotif('Product added!');
+  }
+  closeModal();
+  renderProductsTable();
+  renderDashRecent();
+  markUnsaved();
+}
+function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  data.products = data.products.filter(p => p.id !== id);
+  renderProductsTable();
+  renderDashRecent();
+  markUnsaved();
+  showNotif('Product deleted','warning');
+}
+
+// ====================== CATEGORIES ======================
+function renderCategoryEditors() {
+  document.getElementById('catEditors').innerHTML = data.categories.map(c => `
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-title"><span class="icon">${c.icon}</span> ${c.name} Category</div>
+      </div>
+      <div class="panel-card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category Name</label>
+            <input type="text" value="${c.name}" oninput="updateCat('${c.id}','name',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Nav Icon (emoji)</label>
+            <input type="text" value="${c.icon}" maxlength="2" oninput="updateCat('${c.id}','icon',this.value)">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Background Art (big emoji)</label>
+            <input type="text" value="${c.bigIcon}" maxlength="2" oninput="updateCat('${c.id}','bigIcon',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Button Text</label>
+            <input type="text" value="${c.btnText}" oninput="updateCat('${c.id}','btnText',this.value)">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description / Product Count Text</label>
+          <input type="text" value="${c.count}" oninput="updateCat('${c.id}','count',this.value)">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function updateCat(id, field, val) {
+  const c = data.categories.find(x => x.id === id);
+  if (c) { c[field] = val; markUnsaved(); }
+}
+
+// ====================== TICKER ======================
+function renderTicker() {
+  const container = document.getElementById('promoItems');
+  container.innerHTML = data.ticker.map((t,i) => `
+    <div class="promo-item">
+      <input type="text" value="${t.text}" oninput="data.ticker[${i}].text=this.value;markUnsaved()">
+      <select style="width:100px" onchange="data.ticker[${i}].color=this.value;markUnsaved()">
+        <option value="pink" ${t.color==='pink'?'selected':''}>Pink</option>
+        <option value="cyan" ${t.color==='cyan'?'selected':''}>Cyan</option>
+        <option value="purple" ${t.color==='purple'?'selected':''}>Purple</option>
+      </select>
+      <button class="btn-remove-promo" onclick="removePromoItem(${i})">✕</button>
+    </div>
+  `).join('');
+}
+function addPromoItem() {
+  data.ticker.push({text:'New promo text here', color:'cyan'});
+  renderTicker(); markUnsaved();
+}
+function removePromoItem(i) {
+  data.ticker.splice(i,1);
+  renderTicker(); markUnsaved();
+}
+
+// ====================== SECTION TOGGLES ======================
+function renderSectionToggles() {
+  document.getElementById('sectionToggles').innerHTML = data.sections.map((s,i) => `
+    <div class="section-row">
+      <div class="section-info">
+        <div class="section-name">${s.name}</div>
+        <div class="section-desc">${s.desc}</div>
+      </div>
+      <div class="section-toggle">
+        <span style="font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--text-muted)">${s.visible?'Visible':'Hidden'}</span>
+        <div class="toggle-switch ${s.visible?'on':''}" id="toggle-${s.id}" onclick="toggleSection('${s.id}',${i})">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function toggleSection(id, i) {
+  data.sections[i].visible = !data.sections[i].visible;
+  renderSectionToggles(); markUnsaved();
+}
+
+// ====================== COLORS ======================
+function updateColor(key, val) {
+  data.colors[key] = val;
+  const preview = document.getElementById('preview-'+key);
+  const hex = document.getElementById('hex-'+key);
+  if (preview) preview.style.background = val;
+  if (hex) hex.value = val;
+  markUnsaved();
+}
+function updateColorFromHex(key, val) {
+  if (/^#[0-9a-f]{6}$/i.test(val)) {
+    document.getElementById('color-'+key).value = val;
+    document.getElementById('preview-'+key).style.background = val;
+    data.colors[key] = val;
+    markUnsaved();
+  }
+}
+
+// ====================== SAVE ALL ======================
+function saveAll() {
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'SAVING...';
+  btn.classList.add('saving');
+  // Collect all form values
+  data.hero.badge = document.getElementById('heroBadge').value;
+  data.hero.line1 = document.getElementById('heroLine1').value;
+  data.hero.line2 = document.getElementById('heroLine2').value;
+  data.hero.sub = document.getElementById('heroSub').value;
+  data.hero.cta1 = document.getElementById('heroCta1').value;
+  data.hero.cta2 = document.getElementById('heroCta2').value;
+  data.storeName = document.getElementById('storeName').value;
+  data.storeTagline = document.getElementById('storeTagline').value;
+  data.seo.title = document.getElementById('metaTitle').value;
+  data.seo.desc = document.getElementById('metaDesc').value;
+  data.seo.keywords = document.getElementById('metaKeywords').value;
+  data.contact.email = document.getElementById('storeEmail').value;
+  data.contact.phone = document.getElementById('storePhone').value;
+  data.contact.footerCopy = document.getElementById('footerCopy').value;
+  // Save to localStorage
+  localStorage.setItem('threadverse_admin_data', JSON.stringify(data));
+  setTimeout(() => {
+    btn.textContent = 'SAVE CHANGES';
+    btn.classList.remove('saving');
+    hasUnsaved = false;
+    document.getElementById('unsavedDot').classList.remove('visible');
+    showNotif('All changes saved to storage!');
+  }, 600);
+}
+
+// ====================== NOTIF ======================
+let notifTimer;
+function showNotif(msg, type='success') {
+  const notif = document.getElementById('notif');
+  const icon = document.getElementById('notifIcon');
+  const msgEl = document.getElementById('notifMsg');
+  notif.className = 'notif ' + type;
+  icon.textContent = type==='error'?'✗':type==='warning'?'⚠':type==='success'?'✓':'ℹ';
+  msgEl.textContent = msg;
+  notif.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => notif.classList.remove('show'), 3000);
+}
+
+// ====================== PREVIEW ======================
+function openPreview() {
+  window.open('../index.html', '_blank');
+}
+
+// Load saved data if exists
+const saved = localStorage.getItem('threadverse_admin_data');
+if (saved) {
+  try { Object.assign(data, JSON.parse(saved)); } catch(e){}
+}
+
+// Init
+renderDashRecent();
+</script>
+</body>
+</html>
